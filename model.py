@@ -91,7 +91,7 @@ class EN_Labeler(nn.Module):
             Variable(torch.randn(2 * self.bilstm_num_layers, self.batch_size, self.bilstm_hidden_size),
                      requires_grad=True))
 
-        self.bilstm_layer = nn.LSTM(input_size=300+2*self.flag_emb_size,
+        self.bilstm_layer = nn.LSTM(input_size=300+1*self.flag_emb_size,
                                     hidden_size=self.bilstm_hidden_size, num_layers=self.bilstm_num_layers,
                                     bidirectional=True,
                                     bias=True, batch_first=True)
@@ -119,7 +119,7 @@ class EN_Labeler(nn.Module):
             Variable(torch.randn(2 * 2, self.batch_size, self.bilstm_hidden_size),
                      requires_grad=True))
 
-        self.bilstm_layer_word = nn.LSTM(input_size=300+self.target_vocab_size+2*self.flag_emb_size,
+        self.bilstm_layer_word = nn.LSTM(input_size=300+self.target_vocab_size+1*self.flag_emb_size,
                                     hidden_size=self.bilstm_hidden_size, num_layers=2,
                                     bidirectional=True,
                                     bias=True, batch_first=True)
@@ -152,7 +152,7 @@ class EN_Labeler(nn.Module):
 
 
         #input_emb = torch.cat((pretrain_emb, word_emb), 2)
-        input_emb = torch.cat((pretrain_emb, flag_emb, word_id_emb), 2)
+        input_emb = torch.cat((pretrain_emb, flag_emb), 2)
         input_emb = self.word_dropout(input_emb)
         seq_len = input_emb.shape[1]
         bilstm_output, (_, bilstm_final_state) = self.bilstm_layer(input_emb, self.bilstm_hidden_state)
@@ -167,7 +167,7 @@ class EN_Labeler(nn.Module):
                           num_outputs=self.target_vocab_size, bias_x=True, bias_y=True)
         SRL_output = SRL_output.view(self.batch_size * seq_len, -1)
 
-        SRL_input = SRL_output.view(self.batch_size, seq_len, -1)
+        SRL_input = F.softmax(SRL_output.view(self.batch_size, seq_len, -1),dim=2)
         compress_input = torch.cat((input_emb, SRL_input), 2)
         bilstm_output_word, (_, bilstm_final_state_word) = self.bilstm_layer_word(compress_input, self.bilstm_hidden_state_word)
         bilstm_output_word = bilstm_output_word.contiguous()
