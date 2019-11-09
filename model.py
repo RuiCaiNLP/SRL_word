@@ -91,7 +91,7 @@ class EN_Labeler(nn.Module):
             Variable(torch.randn(2 * self.bilstm_num_layers, self.batch_size, self.bilstm_hidden_size),
                      requires_grad=True))
 
-        self.bilstm_layer = nn.LSTM(input_size=300+self.flag_emb_size,
+        self.bilstm_layer = nn.LSTM(input_size=300+2*self.flag_emb_size,
                                     hidden_size=self.bilstm_hidden_size, num_layers=self.bilstm_num_layers,
                                     bidirectional=True,
                                     bias=True, batch_first=True)
@@ -119,7 +119,7 @@ class EN_Labeler(nn.Module):
             Variable(torch.randn(2 * 2, self.batch_size, self.bilstm_hidden_size),
                      requires_grad=True))
 
-        self.bilstm_layer_word = nn.LSTM(input_size=300+self.target_vocab_size+self.flag_emb_size,
+        self.bilstm_layer_word = nn.LSTM(input_size=300+self.target_vocab_size+2*self.flag_emb_size,
                                     hidden_size=self.bilstm_hidden_size, num_layers=2,
                                     bidirectional=True,
                                     bias=True, batch_first=True)
@@ -134,6 +134,8 @@ class EN_Labeler(nn.Module):
         pretrain_batch = get_torch_variable_from_np(batch_input['pretrain'])
         predicates_1D = batch_input['predicates_idx']
         flag_batch = get_torch_variable_from_np(batch_input['flag'])
+        word_id = get_torch_variable_from_np(batch_input['word_id'])
+        word_id_emb = self.id_embedding(word_id)
         flag_emb = self.flag_embedding(flag_batch)
 
         if lang == "En":
@@ -150,7 +152,7 @@ class EN_Labeler(nn.Module):
 
 
         #input_emb = torch.cat((pretrain_emb, word_emb), 2)
-        input_emb = torch.cat((pretrain_emb, flag_emb), 2)
+        input_emb = torch.cat((pretrain_emb, flag_emb, word_id_emb), 2)
         input_emb = self.word_dropout(input_emb)
         seq_len = input_emb.shape[1]
         bilstm_output, (_, bilstm_final_state) = self.bilstm_layer(input_emb, self.bilstm_hidden_state)
