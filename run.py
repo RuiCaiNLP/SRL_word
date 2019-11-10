@@ -396,7 +396,7 @@ if __name__ == '__main__':
         test_best_score = None
         test_ood_best_score = None
 
-        for epoch in range(max_epoch):
+        for epoch in range(2):
 
             epoch_start = time.time()
             for batch_i, train_input_data in enumerate(inter_utils.get_batch(train_dataset, batch_size, word2idx, fr_word2idx,
@@ -438,13 +438,7 @@ if __name__ == '__main__':
                                                   pos2idx, pretrain2idx, fr_pretrain2idx, deprel2idx, argument2idx, idx2argument, idx2word,
                                                   False,
                                                   dev_predicate_correct, dev_predicate_sum,lang='Fr')
-                    log('En test:')
-                    eval_data(srl_model, elmo, dev_data, batch_size, word2idx,
-                                                  fr_word2idx, lemma2idx,
-                                                  pos2idx, pretrain2idx, fr_pretrain2idx, deprel2idx, argument2idx,
-                                                  idx2argument, idx2word,
-                                                  False,
-                                                  dev_predicate_correct, dev_predicate_sum,lang='En')
+
                     if dev_best_score is None or score[5] > dev_best_score[5]:
                         dev_best_score = score
                         output_predict(
@@ -476,6 +470,60 @@ if __name__ == '__main__':
                 '\repoch {} batch {} batch consume:{} s'.format(epoch, batch_i, int(time.time() - epoch_start)), end="")
                 epoch_start = time.time()
                 """
+        for epoch in range(30):
+            unlabeled_Generator_En = inter_utils.get_batch(unlabeled_dataset_en, batch_size, word2idx, fr_word2idx,
+                                                        lemma2idx, pos2idx, pretrain2idx, fr_pretrain2idx,
+                                                        deprel2idx, argument2idx, idx2word, shuffle=False,
+                                                        lang="En")
+
+            for batch_i, unlabeled_data_fr in enumerate(
+                    inter_utils.get_batch(unlabeled_dataset_fr, batch_size, word2idx, fr_word2idx,
+                                          lemma2idx, pos2idx, pretrain2idx, fr_pretrain2idx,
+                                          deprel2idx, argument2idx, idx2word, shuffle=False, lang='Fr')):
+                srl_model.train()
+
+                try:
+                    unlabeled_data_en = unlabeled_Generator_En.next()
+                except StopIteration:
+                    unlabeled_Generator_En = inter_utils.get_batch(unlabeled_dataset_en, batch_size, word2idx, fr_word2idx,
+                                                                lemma2idx, pos2idx, pretrain2idx, fr_pretrain2idx,
+                                                                deprel2idx, argument2idx, idx2word, shuffle=True,
+                                                                lang="En")
+                    unlabeled_data_en = unlabeled_Generator_En.next()
+
+                u_loss = srl_model((unlabeled_data_en, unlabeled_data_fr), lang='En', unlabeled='True')
+                optimizer.zero_grad()
+                u_loss.backward()
+                optimizer.step()
+
+
+                if batch_i % 50 == 0:
+                    log(batch_i, u_loss)
+
+                if batch_i > 0 and batch_i % show_steps == 0:
+                    log('\n')
+                    log('*' * 80)
+                    srl_model.eval()
+                    # eval_train_batch(epoch, batch_i, loss.data[0], flat_argument, pred, argument2idx)
+
+                    log('FR test:')
+                    score, dev_output = eval_data(srl_model, elmo, labeled_dataset_fr, batch_size, word2idx,
+                                                  fr_word2idx, lemma2idx,
+                                                  pos2idx, pretrain2idx, fr_pretrain2idx, deprel2idx, argument2idx,
+                                                  idx2argument, idx2word,
+                                                  False,
+                                                  dev_predicate_correct, dev_predicate_sum, lang='Fr')
+
+                    if dev_best_score is None or score[5] > dev_best_score[5]:
+                        dev_best_score = score
+                        output_predict(
+                            os.path.join(result_path, 'dev_argument_{:.2f}.pred'.format(dev_best_score[2] * 100)),
+                            dev_output)
+                        # torch.save(srl_model, os.path.join(os.path.dirname(__file__),'model/best_{:.2f}.pkl'.format(dev_best_score[2]*100)))
+                    log('\tdev best P:{:.2f} R:{:.2f} F1:{:.2f} NP:{:.2f} NR:{:.2f} NF1:{:.2f}'.format(
+                        dev_best_score[0] * 100, dev_best_score[1] * 100,
+                        dev_best_score[2] * 100, dev_best_score[3] * 100,
+                        dev_best_score[4] * 100, dev_best_score[5] * 100))
 
     else:
 

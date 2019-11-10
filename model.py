@@ -128,8 +128,101 @@ class SR_Labeler(nn.Module):
                                         nn.Linear(self.mlp_size, self.target_vocab_size))
 
 
+    def parallel_train(self, batch_input):
+        unlabeled_data_en, unlabeled_data_fr = batch_input
 
-    def forward(self, batch_input, lang='En'):
+        word_batch = get_torch_variable_from_np(unlabeled_data_en['word'])
+        pretrain_batch = get_torch_variable_from_np(unlabeled_data_en['pretrain'])
+        predicates_1D = unlabeled_data_en['predicates_idx']
+        flag_batch = get_torch_variable_from_np(unlabeled_data_en['flag'])
+        word_id = get_torch_variable_from_np(unlabeled_data_en['word_times'])
+        word_id_emb = self.id_embedding(word_id)
+        flag_emb = self.flag_embedding(flag_batch)
+        pretrain_emb = self.pretrained_embedding(pretrain_batch).detach()
+        word_id_emb_en = word_id_emb
+        pretrain_emb_en = pretrain_emb
+        input_emb = torch.cat((pretrain_emb, flag_emb), 2)
+        input_emb = self.word_dropout(input_emb)
+        input_emb_en = input_emb
+        seq_len = input_emb.shape[1]
+        seq_len_en = seq_len
+        bilstm_output, (_, bilstm_final_state) = self.bilstm_layer(input_emb, self.bilstm_hidden_state)
+        bilstm_output = bilstm_output.contiguous()
+        hidden_input = bilstm_output.view(bilstm_output.shape[0] * bilstm_output.shape[1], -1)
+        hidden_input = hidden_input.view(self.batch_size, seq_len, -1)
+        hidden_input = self.out_dropout(hidden_input)
+        arg_hidden = self.mlp_arg(hidden_input)
+        pred_recur = hidden_input[np.arange(0, self.batch_size), predicates_1D]
+        pred_hidden = self.mlp_pred(pred_recur)
+        SRL_output = bilinear(arg_hidden, self.rel_W, pred_hidden, self.mlp_size, seq_len, 1, self.batch_size,
+                              num_outputs=self.target_vocab_size, bias_x=True, bias_y=True)
+        SRL_output = SRL_output.view(self.batch_size * seq_len, -1)
+
+        SRL_input = SRL_output.view(self.batch_size, seq_len, -1)
+        compress_input = torch.cat((input_emb, word_id_emb, SRL_input), 2)
+        bilstm_output_word, (_, bilstm_final_state_word) = self.bilstm_layer_word(compress_input,
+                                                                                  self.bilstm_hidden_state_word)
+        bilstm_output_word = bilstm_output_word.contiguous()
+        # hidden_input_word = bilstm_output_word.view(bilstm_output_word.shape[0] * bilstm_output_word.shape[1], -1)
+        pred_recur = bilstm_output_word[np.arange(0, self.batch_size), predicates_1D]
+        pred_recur = pred_recur.view(self.batch_size, self.bilstm_hidden_size * 2)
+        pred_recur = pred_recur.unsqueeze(1).expand(self.batch_size, seq_len, self.bilstm_hidden_size * 2)
+        pred_recur_en = pred_recur
+        combine = torch.cat((pred_recur, input_emb, word_id_emb), 2)
+        output_word = self.match_word(combine)
+        output_word_en = output_word.view(self.batch_size , seq_len, -1).detach()
+
+        word_batch = get_torch_variable_from_np(unlabeled_data_fr['word'])
+        pretrain_batch = get_torch_variable_from_np(unlabeled_data_fr['pretrain'])
+        predicates_1D = unlabeled_data_fr['predicates_idx']
+        flag_batch = get_torch_variable_from_np(unlabeled_data_fr['flag'])
+        word_id = get_torch_variable_from_np(unlabeled_data_fr['word_times'])
+        word_id_emb = self.id_embedding(word_id)
+        flag_emb = self.flag_embedding(flag_batch)
+        pretrain_emb = self.pretrained_embedding(pretrain_batch).detach()
+        word_id_emb_fr = word_id_emb
+        pretrain_emb_fr = pretrain_emb
+        input_emb = torch.cat((pretrain_emb, flag_emb), 2)
+        input_emb = self.word_dropout(input_emb)
+        input_emb_fr = input_emb
+        seq_len = input_emb.shape[1]
+        seq_len_fr = seq_len
+        bilstm_output, (_, bilstm_final_state) = self.bilstm_layer(input_emb, self.bilstm_hidden_state)
+        bilstm_output = bilstm_output.contiguous()
+        hidden_input = bilstm_output.view(bilstm_output.shape[0] * bilstm_output.shape[1], -1)
+        hidden_input = hidden_input.view(self.batch_size, seq_len, -1)
+        hidden_input = self.out_dropout(hidden_input)
+        arg_hidden = self.mlp_arg(hidden_input)
+        pred_recur = hidden_input[np.arange(0, self.batch_size), predicates_1D]
+        pred_hidden = self.mlp_pred(pred_recur)
+        SRL_output = bilinear(arg_hidden, self.rel_W, pred_hidden, self.mlp_size, seq_len, 1, self.batch_size,
+                              num_outputs=self.target_vocab_size, bias_x=True, bias_y=True)
+        SRL_output = SRL_output.view(self.batch_size * seq_len, -1)
+
+        SRL_input = SRL_output.view(self.batch_size, seq_len, -1)
+        compress_input = torch.cat((input_emb, word_id_emb, SRL_input), 2)
+        bilstm_output_word, (_, bilstm_final_state_word) = self.bilstm_layer_word(compress_input,
+                                                                                  self.bilstm_hidden_state_word)
+        bilstm_output_word = bilstm_output_word.contiguous()
+        # hidden_input_word = bilstm_output_word.view(bilstm_output_word.shape[0] * bilstm_output_word.shape[1], -1)
+        pred_recur = bilstm_output_word[np.arange(0, self.batch_size), predicates_1D]
+        pred_recur = pred_recur.view(self.batch_size, self.bilstm_hidden_size * 2)
+
+        pred_recur = pred_recur.unsqueeze(1).expand(self.batch_size, seq_len_en, self.bilstm_hidden_size * 2)
+        pred_recur_fr = pred_recur
+        combine = torch.cat((pred_recur_fr, input_emb_en, word_id_emb_en), 2)
+        output_word_fr = self.match_word(combine)
+        output_word_fr = output_word_fr.view(self.batch_size , seq_len_en, -1)
+        unlabeled_loss_function = nn.KLDivLoss()
+        output_word_en = F.softmax(output_word_en, dim=2)
+        output_word_fr = F.log_softmax(output_word_fr, dim=2)
+        loss = unlabeled_loss_function(output_word_fr, output_word_en)
+        return loss
+
+
+    def forward(self, batch_input, lang='En', unlabeled='False'):
+        if unlabeled:
+            return self.parallel_train(batch_input)
         word_batch = get_torch_variable_from_np(batch_input['word'])
         pretrain_batch = get_torch_variable_from_np(batch_input['pretrain'])
         predicates_1D = batch_input['predicates_idx']
