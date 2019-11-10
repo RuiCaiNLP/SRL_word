@@ -159,7 +159,7 @@ def make_parser():
 
 
 if __name__ == '__main__':
-    log('predicate identification model')
+    log('cross-lingual model')
 
     args = make_parser().parse_args()
 
@@ -231,6 +231,7 @@ if __name__ == '__main__':
     dev_data_fr = data_utils.load_dump_data(dev_input_file_fr)
     train_dataset_fr = train_data_fr['input_data']
     dev_dataset_fr = dev_data_fr['input_data']
+    labeled_dataset_fr = train_dataset_fr.extend(dev_dataset_fr)
 
     unlabeled_file_en = os.path.join(os.path.dirname(__file__), 'temp/unlabeled_en.pickle.input')
     unlabeled_file_fr = os.path.join(os.path.dirname(__file__), 'temp/unlabeled_fr.pickle.input')
@@ -374,7 +375,7 @@ if __name__ == '__main__':
         }
 
         # build model
-        srl_model = model.EN_Labeler(model_params)
+        srl_model = model.SR_Labeler(model_params)
 
         if USE_CUDA:
             srl_model.cuda()
@@ -429,11 +430,18 @@ if __name__ == '__main__':
 
                     eval_train_batch(epoch, batch_i, loss.data[0], flat_argument, pred, argument2idx)
 
-                    log('dev:')
-                    score, dev_output = eval_data(srl_model, elmo, dev_dataset, batch_size, word2idx, fr_word2idx, lemma2idx,
+                    log('FR test:')
+                    score, dev_output = eval_data(srl_model, elmo, labeled_dataset_fr, batch_size, word2idx, fr_word2idx, lemma2idx,
                                                   pos2idx, pretrain2idx, fr_pretrain2idx, deprel2idx, argument2idx, idx2argument, idx2word,
                                                   False,
-                                                  dev_predicate_correct, dev_predicate_sum)
+                                                  dev_predicate_correct, dev_predicate_sum,lang='Fr')
+                    log('En test:')
+                    eval_data(srl_model, elmo, dev_data, batch_size, word2idx,
+                                                  fr_word2idx, lemma2idx,
+                                                  pos2idx, pretrain2idx, fr_pretrain2idx, deprel2idx, argument2idx,
+                                                  idx2argument, idx2word,
+                                                  False,
+                                                  dev_predicate_correct, dev_predicate_sum,lang='En')
                     if dev_best_score is None or score[5] > dev_best_score[5]:
                         dev_best_score = score
                         output_predict(

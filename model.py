@@ -17,9 +17,9 @@ def log(*args, **kwargs):
 
 
 
-class EN_Labeler(nn.Module):
+class SR_Labeler(nn.Module):
     def __init__(self, model_params):
-        super(EN_Labeler, self).__init__()
+        super(SR_Labeler, self).__init__()
         self.dropout = model_params['dropout']
         self.dropout_word = model_params['dropout_word']
         self.dropout_mlp = model_params['dropout_mlp']
@@ -91,7 +91,7 @@ class EN_Labeler(nn.Module):
             Variable(torch.randn(2 * self.bilstm_num_layers, self.batch_size, self.bilstm_hidden_size),
                      requires_grad=True))
 
-        self.bilstm_layer = nn.LSTM(input_size=300+2*self.flag_emb_size,
+        self.bilstm_layer = nn.LSTM(input_size=300+1*self.flag_emb_size,
                                     hidden_size=self.bilstm_hidden_size, num_layers=self.bilstm_num_layers,
                                     bidirectional=True,
                                     bias=True, batch_first=True)
@@ -152,7 +152,7 @@ class EN_Labeler(nn.Module):
 
 
         #input_emb = torch.cat((pretrain_emb, word_emb), 2)
-        input_emb = torch.cat((pretrain_emb, flag_emb, word_id_emb), 2)
+        input_emb = torch.cat((pretrain_emb, flag_emb), 2)
         input_emb = self.word_dropout(input_emb)
         seq_len = input_emb.shape[1]
         bilstm_output, (_, bilstm_final_state) = self.bilstm_layer(input_emb, self.bilstm_hidden_state)
@@ -168,14 +168,14 @@ class EN_Labeler(nn.Module):
         SRL_output = SRL_output.view(self.batch_size * seq_len, -1)
 
         SRL_input = SRL_output.view(self.batch_size, seq_len, -1)
-        compress_input = torch.cat((input_emb, SRL_input), 2)
+        compress_input = torch.cat((input_emb, word_id_emb, SRL_input), 2)
         bilstm_output_word, (_, bilstm_final_state_word) = self.bilstm_layer_word(compress_input, self.bilstm_hidden_state_word)
         bilstm_output_word = bilstm_output_word.contiguous()
         #hidden_input_word = bilstm_output_word.view(bilstm_output_word.shape[0] * bilstm_output_word.shape[1], -1)
         pred_recur = bilstm_output_word[np.arange(0, self.batch_size), predicates_1D]
         pred_recur = pred_recur.view(self.batch_size, self.bilstm_hidden_size*2)
         pred_recur = pred_recur.unsqueeze(1).expand(self.batch_size, seq_len, self.bilstm_hidden_size*2)
-        combine = torch.cat((pred_recur, input_emb), 2)
+        combine = torch.cat((pred_recur, input_emb, word_id_emb), 2)
         output_word = self.match_word(combine)
         output_word = output_word.view(self.batch_size * seq_len, -1)
         return SRL_output, output_word
