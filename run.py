@@ -231,7 +231,10 @@ if __name__ == '__main__':
     dev_data_fr = data_utils.load_dump_data(dev_input_file_fr)
     train_dataset_fr = train_data_fr['input_data']
     dev_dataset_fr = dev_data_fr['input_data']
-    labeled_dataset_fr = train_dataset_fr.extend(dev_dataset_fr)
+    #log(len(train_dataset_fr))
+    #log(len(dev_dataset_fr))
+    labeled_dataset_fr = train_dataset_fr + dev_dataset_fr
+    #log(len(labeled_dataset_fr))
 
     unlabeled_file_en = os.path.join(os.path.dirname(__file__), 'temp/unlabeled_en.pickle.input')
     unlabeled_file_fr = os.path.join(os.path.dirname(__file__), 'temp/unlabeled_fr.pickle.input')
