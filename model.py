@@ -51,7 +51,7 @@ class EN_Labeler(nn.Module):
         self.fr_pretrained_embedding = nn.Embedding(self.fr_pretrain_vocab_size, self.pretrain_emb_size)
         self.fr_pretrained_embedding.weight.data.copy_(torch.from_numpy(self.fr_pretrain_emb_weight))
 
-        self.id_embedding = nn.Embedding(1000, self.flag_emb_size)
+        self.id_embedding = nn.Embedding(100, self.flag_emb_size)
         self.id_embedding.weight.data.uniform_(-1.0, 1.0)
 
         if self.use_flag_embedding:
@@ -134,7 +134,7 @@ class EN_Labeler(nn.Module):
         pretrain_batch = get_torch_variable_from_np(batch_input['pretrain'])
         predicates_1D = batch_input['predicates_idx']
         flag_batch = get_torch_variable_from_np(batch_input['flag'])
-        word_id = get_torch_variable_from_np(batch_input['word_id'])
+        word_id = get_torch_variable_from_np(batch_input['word_times'])
         word_id_emb = self.id_embedding(word_id)
         flag_emb = self.flag_embedding(flag_batch)
 

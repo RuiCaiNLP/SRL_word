@@ -73,6 +73,21 @@ def get_batch(input_data, batch_size, word2idx, fr_word2idx, lemma2idx, pos2idx,
             word_batch = [[fr_word2idx.get(item[6], fr_word2idx[_UNK_]) for item in sentence] for sentence in data_batch]
             pad_word_batch = np.array(pad_batch(word_batch, batch_size, fr_word2idx[_PAD_]))
 
+        word_times_batch = []
+        for sentence in data_batch:
+            word_dict = dict()
+            word_times = []
+            for item in sentence:
+                word = item[6]
+                if word_dict.has_key(word):
+                    word_dict[word] +=1
+                    word_times.append(word_dict[word])
+                else:
+                    word_dict[word] = 1
+                    word_times.append(1)
+            word_times_batch.append(word_times)
+        pad_word_times_batch = np.array(pad_batch(word_times_batch, batch_size, 0))
+
 
         argument_batch = [[argument2idx.get(item[12],argument2idx["_"]) for item in sentence] for sentence in data_batch]
         pad_argument_batch = np.array(pad_batch(argument_batch, batch_size, argument2idx[_PAD_]))
@@ -113,6 +128,7 @@ def get_batch(input_data, batch_size, word2idx, fr_word2idx, lemma2idx, pos2idx,
             "flag":pad_flag_batch,
             "sen_flags":pad_sentence_flags_batch,
             "flat_flags":flat_flags_batch,
+            "word_times":pad_word_times_batch,
             #"fr_flag": fr_pad_flag_batch,
             #"fr_loss_mask":fr_loss_mask_batch,
             "word":pad_word_batch,
