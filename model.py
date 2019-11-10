@@ -220,7 +220,7 @@ class SR_Labeler(nn.Module):
         return loss
 
 
-    def forward(self, batch_input, lang='En', unlabeled='False'):
+    def forward(self, batch_input, lang='En', unlabeled=False):
         if unlabeled:
             return self.parallel_train(batch_input)
         word_batch = get_torch_variable_from_np(batch_input['word'])
