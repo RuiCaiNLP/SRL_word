@@ -215,7 +215,7 @@ class SR_Labeler(nn.Module):
         hidden_input_fr = hidden_input_fr.view(self.batch_size, seq_len_fr, -1)
         hidden_input_fr = self.out_dropout(hidden_input_fr)
         arg_hidden_fr = self.mlp_arg(hidden_input_fr)
-        pred_recur_fr = hidden_input[np.arange(0, self.batch_size), predicates_1D_fr]
+        pred_recur_fr = hidden_input_fr[np.arange(0, self.batch_size), predicates_1D_fr]
         pred_hidden_fr = self.mlp_pred(pred_recur_fr)
         SRL_output_fr = bilinear(arg_hidden_fr, self.rel_W, pred_hidden_fr, self.mlp_size, seq_len_fr, 1, self.batch_size,
                               num_outputs=self.target_vocab_size, bias_x=True, bias_y=True)

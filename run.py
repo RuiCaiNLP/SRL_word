@@ -231,7 +231,7 @@ def parallel_train_1_epoc(srl_model, criterion, optimizer, train_dataset, labele
 
         predicates_1D = unlabeled_data_en['predicates_idx']
         predicates_1D_fr = unlabeled_data_fr['predicates_idx']
-        log(predicates_1D, predicates_1D_fr)
+        #log(predicates_1D, predicates_1D_fr)
         u_loss = srl_model((unlabeled_data_en, unlabeled_data_fr), lang='En', unlabeled='True')
         optimizer.zero_grad()
         u_loss.backward()
@@ -507,6 +507,7 @@ if __name__ == '__main__':
         for epoch in range(30):
 
             epoch_start = time.time()
+
             dev_best_score = train_1_epoc(srl_model, criterion, optimizer, train_dataset, labeled_dataset_fr, batch_size,
                  word2idx, fr_word2idx, lemma2idx, pos2idx, pretrain2idx, fr_pretrain2idx,
                  deprel2idx, argument2idx, idx2word, shuffle=False, lang='En',
