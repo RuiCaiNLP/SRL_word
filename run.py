@@ -245,7 +245,7 @@ def parallel_train_1_epoc(srl_model, criterion, optimizer, train_dataset, labele
         if batch_i % 50 == 0:
             log(batch_i, u_loss)
 
-        if batch_i > 0 and batch_i % show_steps == 0:
+        if batch_i > 0 and batch_i % 50 == 0:
             log('\n')
             log('*' * 80)
             srl_model.eval()
@@ -517,17 +517,12 @@ if __name__ == '__main__':
                  deprel2idx, argument2idx, idx2word, shuffle=False, lang='En',
                  dev_best_score = None, test_best_score = None, test_ood_best_score = None)
 
-            dev_best_score = train_1_epoc(srl_model, criterion, optimizer, train_dataset, labeled_dataset_fr,
-                                          batch_size,
-                                          word2idx, fr_word2idx, lemma2idx, pos2idx, pretrain2idx, fr_pretrain2idx,
-                                          deprel2idx, argument2idx, idx2word, shuffle=False, lang='En',
-                                          dev_best_score=None, test_best_score=None, test_ood_best_score=None)
-
-            dev_best_score = parallel_train_1_epoc(srl_model, criterion, optimizer, (unlabeled_dataset_en, unlabeled_dataset_fr),
-                                                   labeled_dataset_fr, batch_size,
-                 word2idx, fr_word2idx, lemma2idx, pos2idx, pretrain2idx, fr_pretrain2idx,
-                 deprel2idx, argument2idx, idx2word, shuffle=False, lang='En',
-                 dev_best_score = None, test_best_score = None, test_ood_best_score = None)
+            for i in range(2):
+                dev_best_score = parallel_train_1_epoc(srl_model, criterion, optimizer, (unlabeled_dataset_en, unlabeled_dataset_fr),
+                                                       labeled_dataset_fr, batch_size,
+                     word2idx, fr_word2idx, lemma2idx, pos2idx, pretrain2idx, fr_pretrain2idx,
+                     deprel2idx, argument2idx, idx2word, shuffle=False, lang='En',
+                     dev_best_score = None, test_best_score = None, test_ood_best_score = None)
 
     else:
 
