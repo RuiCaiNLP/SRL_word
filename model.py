@@ -136,7 +136,7 @@ class SR_Labeler(nn.Module):
             self.bilstm_hidden_state_word_p = (
             Variable(torch.randn(2 * 2, 1, self.bilstm_hidden_size),
                      requires_grad=True).cuda(),
-            Variable(torch.randn(2 * 2, self.batch_size, self.bilstm_hidden_size),
+            Variable(torch.randn(2 * 2, 1, self.bilstm_hidden_size),
                      requires_grad=True).cuda())
         else:
             self.bilstm_hidden_state_word_p = (
