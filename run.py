@@ -517,14 +517,14 @@ if __name__ == '__main__':
                  deprel2idx, argument2idx, idx2word, shuffle=False, lang='En',
                  dev_best_score = None, test_best_score = None, test_ood_best_score = None)
 
-            for i in range(2):
-                batch_size=1
-                dev_best_score = parallel_train_1_epoc(srl_model, criterion, optimizer, (unlabeled_dataset_en, unlabeled_dataset_fr),
-                                                       labeled_dataset_fr, batch_size,
-                     word2idx, fr_word2idx, lemma2idx, pos2idx, pretrain2idx, fr_pretrain2idx,
-                     deprel2idx, argument2idx, idx2word, shuffle=False, lang='En',
-                     dev_best_score = None, test_best_score = None, test_ood_best_score = None)
-                batch_size=30
+
+            batch_size=1
+            dev_best_score = parallel_train_1_epoc(srl_model, criterion, optimizer, (unlabeled_dataset_en, unlabeled_dataset_fr),
+                                                   labeled_dataset_fr, batch_size,
+                 word2idx, fr_word2idx, lemma2idx, pos2idx, pretrain2idx, fr_pretrain2idx,
+                 deprel2idx, argument2idx, idx2word, shuffle=False, lang='En',
+                 dev_best_score = None, test_best_score = None, test_ood_best_score = None)
+            batch_size=30
 
     else:
 
