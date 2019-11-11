@@ -179,7 +179,7 @@ class SR_Labeler(nn.Module):
         word_id = get_torch_variable_from_np(unlabeled_data_fr['word_times'])
         word_id_emb = self.id_embedding(word_id)
         flag_emb = self.flag_embedding(flag_batch)
-        pretrain_emb = self.pretrained_embedding(pretrain_batch).detach()
+        pretrain_emb = self.fr_pretrained_embedding(pretrain_batch).detach()
         word_id_emb_fr = word_id_emb
         pretrain_emb_fr = pretrain_emb
         input_emb = torch.cat((pretrain_emb, flag_emb), 2)
