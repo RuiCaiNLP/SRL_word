@@ -103,7 +103,7 @@ def get_batch(input_data, batch_size, word2idx, fr_word2idx, lemma2idx, pos2idx,
                 role_mask_batch[i][role_idx] = 1
 
         if lang=='En':
-            pretrain_word_batch = [[pretrain2idx.get(item[6],pretrain2idx[_UNK_]) for item in sentence] for sentence in data_batch]
+            pretrain_word_batch = [[pretrain2idx.get(item[6], pretrain2idx[_UNK_]) for item in sentence] for sentence in data_batch]
             pad_pretrain_word_batch = np.array(pad_batch(pretrain_word_batch, batch_size, pretrain2idx[_PAD_]))
         else:
             pretrain_word_batch = [[fr_pretrain2idx.get(item[6], fr_pretrain2idx[_UNK_]) for item in sentence] for sentence in

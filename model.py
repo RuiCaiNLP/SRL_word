@@ -91,6 +91,19 @@ class SR_Labeler(nn.Module):
             Variable(torch.randn(2 * self.bilstm_num_layers, self.batch_size, self.bilstm_hidden_size),
                      requires_grad=True))
 
+        if USE_CUDA:
+            self.bilstm_hidden_state_p = (
+            Variable(torch.randn(2 * self.bilstm_num_layers, 1, self.bilstm_hidden_size),
+                     requires_grad=True).cuda(),
+            Variable(torch.randn(2 * self.bilstm_num_layers, 1, self.bilstm_hidden_size),
+                     requires_grad=True).cuda())
+        else:
+            self.bilstm_hidden_state_p = (
+            Variable(torch.randn(2 * self.bilstm_num_layers, 1, self.bilstm_hidden_size),
+                     requires_grad=True),
+            Variable(torch.randn(2 * self.bilstm_num_layers, 1, self.bilstm_hidden_size),
+                     requires_grad=True))
+
         self.bilstm_layer = nn.LSTM(input_size=300+1*self.flag_emb_size,
                                     hidden_size=self.bilstm_hidden_size, num_layers=self.bilstm_num_layers,
                                     bidirectional=True,
@@ -117,6 +130,19 @@ class SR_Labeler(nn.Module):
             Variable(torch.randn(2 * 2, self.batch_size, self.bilstm_hidden_size),
                      requires_grad=True),
             Variable(torch.randn(2 * 2, self.batch_size, self.bilstm_hidden_size),
+                     requires_grad=True))
+
+        if USE_CUDA:
+            self.bilstm_hidden_state_word_p = (
+            Variable(torch.randn(2 * 2, 1, self.bilstm_hidden_size),
+                     requires_grad=True).cuda(),
+            Variable(torch.randn(2 * 2, self.batch_size, self.bilstm_hidden_size),
+                     requires_grad=True).cuda())
+        else:
+            self.bilstm_hidden_state_word_p = (
+            Variable(torch.randn(2 * 2, 1, self.bilstm_hidden_size),
+                     requires_grad=True),
+            Variable(torch.randn(2 * 2, 1, self.bilstm_hidden_size),
                      requires_grad=True))
 
         self.bilstm_layer_word = nn.LSTM(input_size=300+self.target_vocab_size+2*self.flag_emb_size,
@@ -146,7 +172,7 @@ class SR_Labeler(nn.Module):
         input_emb_en = input_emb
         seq_len = input_emb.shape[1]
         seq_len_en = seq_len
-        bilstm_output, (_, bilstm_final_state) = self.bilstm_layer(input_emb, self.bilstm_hidden_state)
+        bilstm_output, (_, bilstm_final_state) = self.bilstm_layer(input_emb, self.bilstm_hidden_state_p)
         bilstm_output = bilstm_output.contiguous()
         hidden_input = bilstm_output.view(bilstm_output.shape[0] * bilstm_output.shape[1], -1)
         hidden_input = hidden_input.view(self.batch_size, seq_len, -1)
@@ -161,7 +187,7 @@ class SR_Labeler(nn.Module):
         SRL_input = SRL_output.view(self.batch_size, seq_len, -1)
         compress_input = torch.cat((input_emb, word_id_emb, SRL_input), 2)
         bilstm_output_word, (_, bilstm_final_state_word) = self.bilstm_layer_word(compress_input,
-                                                                                  self.bilstm_hidden_state_word)
+                                                                                  self.bilstm_hidden_state_word_p)
         bilstm_output_word = bilstm_output_word.contiguous()
         # hidden_input_word = bilstm_output_word.view(bilstm_output_word.shape[0] * bilstm_output_word.shape[1], -1)
         pred_recur = bilstm_output_word[np.arange(0, self.batch_size), predicates_1D]
@@ -187,7 +213,7 @@ class SR_Labeler(nn.Module):
         input_emb_fr = input_emb
         seq_len = input_emb.shape[1]
         seq_len_fr = seq_len
-        bilstm_output, (_, bilstm_final_state) = self.bilstm_layer(input_emb, self.bilstm_hidden_state)
+        bilstm_output, (_, bilstm_final_state) = self.bilstm_layer(input_emb, self.bilstm_hidden_state_p)
         bilstm_output = bilstm_output.contiguous()
         hidden_input = bilstm_output.view(bilstm_output.shape[0] * bilstm_output.shape[1], -1)
         hidden_input = hidden_input.view(self.batch_size, seq_len, -1)
@@ -202,7 +228,7 @@ class SR_Labeler(nn.Module):
         SRL_input = SRL_output.view(self.batch_size, seq_len, -1)
         compress_input = torch.cat((input_emb, word_id_emb, SRL_input), 2)
         bilstm_output_word, (_, bilstm_final_state_word) = self.bilstm_layer_word(compress_input,
-                                                                                  self.bilstm_hidden_state_word)
+                                                                                  self.bilstm_hidden_state_word_p)
         bilstm_output_word = bilstm_output_word.contiguous()
         # hidden_input_word = bilstm_output_word.view(bilstm_output_word.shape[0] * bilstm_output_word.shape[1], -1)
         pred_recur = bilstm_output_word[np.arange(0, self.batch_size), predicates_1D]
@@ -222,7 +248,10 @@ class SR_Labeler(nn.Module):
 
     def forward(self, batch_input, lang='En', unlabeled=False):
         if unlabeled:
-            return self.parallel_train(batch_input)
+            self.batch_size=1
+            loss = self.parallel_train(batch_input)
+            self.batch_size = 30
+            return loss
         word_batch = get_torch_variable_from_np(batch_input['word'])
         pretrain_batch = get_torch_variable_from_np(batch_input['pretrain'])
         predicates_1D = batch_input['predicates_idx']
