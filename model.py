@@ -161,6 +161,7 @@ class SR_Labeler(nn.Module):
         pretrain_batch = get_torch_variable_from_np(unlabeled_data_en['pretrain'])
         predicates_1D = unlabeled_data_en['predicates_idx']
         flag_batch = get_torch_variable_from_np(unlabeled_data_en['flag'])
+        log(flag_batch)
         word_id = get_torch_variable_from_np(unlabeled_data_en['word_times'])
         word_id_emb = self.id_embedding(word_id)
         flag_emb = self.flag_embedding(flag_batch)
@@ -168,7 +169,7 @@ class SR_Labeler(nn.Module):
         word_id_emb_en = word_id_emb.detach()
         pretrain_emb_en = pretrain_emb
         input_emb = torch.cat((pretrain_emb, flag_emb), 2)
-        input_emb = self.word_dropout(input_emb)
+        #input_emb = self.word_dropout(input_emb)
         input_emb_en = input_emb
         seq_len = input_emb.shape[1]
         seq_len_en = seq_len
@@ -176,7 +177,6 @@ class SR_Labeler(nn.Module):
         bilstm_output = bilstm_output.contiguous()
         hidden_input = bilstm_output.view(bilstm_output.shape[0] * bilstm_output.shape[1], -1)
         hidden_input = hidden_input.view(self.batch_size, seq_len, -1)
-        hidden_input = self.out_dropout(hidden_input)
         arg_hidden = self.mlp_arg(hidden_input)
         pred_recur = hidden_input[np.arange(0, self.batch_size), predicates_1D]
         pred_hidden = self.mlp_pred(pred_recur)
@@ -199,21 +199,21 @@ class SR_Labeler(nn.Module):
         output_word_en = output_word.view(self.batch_size*seq_len, -1).detach()
 
 
+
         pretrain_batch_fr = get_torch_variable_from_np(unlabeled_data_fr['pretrain'])
         predicates_1D_fr = unlabeled_data_fr['predicates_idx']
         flag_batch_fr = get_torch_variable_from_np(unlabeled_data_fr['flag'])
+        log(flag_batch_fr)
         word_id_fr = get_torch_variable_from_np(unlabeled_data_fr['word_times'])
         word_id_emb_fr = self.id_embedding(word_id_fr).detach()
         flag_emb_fr = self.flag_embedding(flag_batch_fr).detach()
         pretrain_emb_fr = self.fr_pretrained_embedding(pretrain_batch_fr).detach()
         input_emb_fr = torch.cat((pretrain_emb_fr, flag_emb_fr), 2)
-        input_emb_fr = self.word_dropout(input_emb_fr)
         seq_len_fr = input_emb_fr.shape[1]
         bilstm_output_fr, (_, bilstm_final_state) = self.bilstm_layer(input_emb_fr, self.bilstm_hidden_state_p)
         bilstm_output_fr = bilstm_output_fr.contiguous()
         hidden_input_fr = bilstm_output_fr.view(bilstm_output_fr.shape[0] * bilstm_output_fr.shape[1], -1)
         hidden_input_fr = hidden_input_fr.view(self.batch_size, seq_len_fr, -1)
-        hidden_input_fr = self.out_dropout(hidden_input_fr)
         arg_hidden_fr = self.mlp_arg(hidden_input_fr)
         pred_recur_fr = hidden_input_fr[np.arange(0, self.batch_size), predicates_1D_fr]
         pred_hidden_fr = self.mlp_pred(pred_recur_fr)
@@ -234,10 +234,13 @@ class SR_Labeler(nn.Module):
         combine = torch.cat((pred_recur_fr, input_emb_en.detach(), word_id_emb_en.detach()), 2)
         output_word_fr = self.match_word(combine)
         output_word_fr = output_word_fr.view(self.batch_size*seq_len_en, -1)
+        log(output_word_en[0:5])
+        log(output_word_fr[0:5])
         unlabeled_loss_function = nn.KLDivLoss(size_average=False)
         output_word_en = F.softmax(output_word_en, dim=1).detach()
         output_word_fr = F.log_softmax(output_word_fr, dim=1)
         loss = unlabeled_loss_function(output_word_fr, output_word_en)/seq_len_en
+        log(loss)
         return loss
 
 
