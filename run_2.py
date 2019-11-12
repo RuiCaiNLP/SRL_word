@@ -554,7 +554,7 @@ if __name__ == '__main__':
 
                 u_loss = srl_model((unlabeled_data_en, unlabeled_data_fr), lang='En', unlabeled='True')
                 optimizer.zero_grad()
-                u_loss.backward()
+                #u_loss.backward()
                 optimizer.step()
                 batch_size = 30
 
