@@ -203,7 +203,7 @@ class SR_Labeler(nn.Module):
         predicates_1D_fr = unlabeled_data_fr['predicates_idx']
         flag_batch_fr = get_torch_variable_from_np(unlabeled_data_fr['flag'])
         word_id_fr = get_torch_variable_from_np(unlabeled_data_fr['word_times'])
-        word_id_emb_fr = self.id_embedding(word_id_fr)
+        word_id_emb_fr = self.id_embedding(word_id_fr).detach()
         flag_emb_fr = self.flag_embedding(flag_batch_fr).detach()
         pretrain_emb_fr = self.fr_pretrained_embedding(pretrain_batch_fr).detach()
         input_emb_fr = torch.cat((pretrain_emb_fr, flag_emb_fr), 2)
@@ -238,7 +238,7 @@ class SR_Labeler(nn.Module):
         output_word_en = F.softmax(output_word_en, dim=2).detach()
         output_word_fr = F.log_softmax(output_word_fr, dim=2).detach()
         loss = unlabeled_loss_function(output_word_fr, output_word_en)
-        log(loss)
+        #log(loss)
         return loss
 
 
