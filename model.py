@@ -157,11 +157,23 @@ class SR_Labeler(nn.Module):
     def parallel_train(self, batch_input):
         unlabeled_data_en, unlabeled_data_fr = batch_input
 
+        pretrain_batch_fr = get_torch_variable_from_np(unlabeled_data_fr['pretrain'])
+        predicates_1D_fr = unlabeled_data_fr['predicates_idx']
+        flag_batch_fr = get_torch_variable_from_np(unlabeled_data_fr['flag'])
+        # log(flag_batch_fr)
+        word_id_fr = get_torch_variable_from_np(unlabeled_data_fr['word_times'])
+        word_id_emb_fr = self.id_embedding(word_id_fr).detach()
+        flag_emb_fr = self.flag_embedding(flag_batch_fr).detach()
+        pretrain_emb_fr = self.fr_pretrained_embedding(pretrain_batch_fr).detach()
+        input_emb_fr = torch.cat((pretrain_emb_fr, flag_emb_fr), 2)
+        seq_len_fr = input_emb_fr.shape[1]
+
+
         word_batch = get_torch_variable_from_np(unlabeled_data_en['word'])
         pretrain_batch = get_torch_variable_from_np(unlabeled_data_en['pretrain'])
         predicates_1D = unlabeled_data_en['predicates_idx']
         flag_batch = get_torch_variable_from_np(unlabeled_data_en['flag'])
-        log(flag_batch)
+        #log(flag_batch)
         word_id = get_torch_variable_from_np(unlabeled_data_en['word_times'])
         word_id_emb = self.id_embedding(word_id)
         flag_emb = self.flag_embedding(flag_batch)
@@ -192,24 +204,18 @@ class SR_Labeler(nn.Module):
         # hidden_input_word = bilstm_output_word.view(bilstm_output_word.shape[0] * bilstm_output_word.shape[1], -1)
         pred_recur = bilstm_output_word[np.arange(0, self.batch_size), predicates_1D]
         pred_recur = pred_recur.view(self.batch_size, self.bilstm_hidden_size * 2)
-        pred_recur = pred_recur.unsqueeze(1).expand(self.batch_size, seq_len, self.bilstm_hidden_size * 2)
-        pred_recur_en = pred_recur
+        pred_recur_1 = pred_recur.unsqueeze(1).expand(self.batch_size, seq_len, self.bilstm_hidden_size * 2)
+        pred_recur_2 = pred_recur.unsqueeze(1).expand(self.batch_size, seq_len_fr, self.bilstm_hidden_size * 2)
+        pred_recur_en = pred_recur_1
+        pred_recur_en_2 = pred_recur_2
         combine = torch.cat((pred_recur, input_emb, word_id_emb), 2)
         output_word = self.match_word(combine)
         output_word_en = output_word.view(self.batch_size*seq_len, -1).detach()
 
 
 
-        pretrain_batch_fr = get_torch_variable_from_np(unlabeled_data_fr['pretrain'])
-        predicates_1D_fr = unlabeled_data_fr['predicates_idx']
-        flag_batch_fr = get_torch_variable_from_np(unlabeled_data_fr['flag'])
-        log(flag_batch_fr)
-        word_id_fr = get_torch_variable_from_np(unlabeled_data_fr['word_times'])
-        word_id_emb_fr = self.id_embedding(word_id_fr).detach()
-        flag_emb_fr = self.flag_embedding(flag_batch_fr).detach()
-        pretrain_emb_fr = self.fr_pretrained_embedding(pretrain_batch_fr).detach()
-        input_emb_fr = torch.cat((pretrain_emb_fr, flag_emb_fr), 2)
-        seq_len_fr = input_emb_fr.shape[1]
+
+
         bilstm_output_fr, (_, bilstm_final_state) = self.bilstm_layer(input_emb_fr, self.bilstm_hidden_state_p)
         bilstm_output_fr = bilstm_output_fr.contiguous()
         hidden_input_fr = bilstm_output_fr.view(bilstm_output_fr.shape[0] * bilstm_output_fr.shape[1], -1)
@@ -230,18 +236,33 @@ class SR_Labeler(nn.Module):
         pred_recur_fr = bilstm_output_word_fr[np.arange(0, self.batch_size), predicates_1D_fr]
         pred_recur_fr = pred_recur_fr.view(self.batch_size, self.bilstm_hidden_size * 2)
 
+        #############################################3
         pred_recur_fr = pred_recur_fr.unsqueeze(1).expand(self.batch_size, seq_len_en, self.bilstm_hidden_size * 2)
         combine = torch.cat((pred_recur_fr, input_emb_en.detach(), word_id_emb_en.detach()), 2)
         output_word_fr = self.match_word(combine)
         output_word_fr = output_word_fr.view(self.batch_size*seq_len_en, -1)
-        log(torch.max(output_word_en, 1)[1])
-        log(torch.max(output_word_fr, 1)[1])
+
         unlabeled_loss_function = nn.KLDivLoss(size_average=False)
         output_word_en = F.softmax(output_word_en, dim=1).detach()
         output_word_fr = F.log_softmax(output_word_fr, dim=1)
         loss = unlabeled_loss_function(output_word_fr, output_word_en)/seq_len_en
-        log(loss)
-        return loss
+
+        #############################################3
+
+        combine = torch.cat((pred_recur_en_2 , input_emb_fr, word_id_emb_fr), 2)
+        output_word = self.match_word(combine)
+        output_word_en_2 = output_word.view(self.batch_size * seq_len_fr, -1)
+
+        pred_recur_fr = pred_recur_fr.unsqueeze(1).expand(self.batch_size, seq_len_fr, self.bilstm_hidden_size * 2)
+        combine = torch.cat((pred_recur_fr, input_emb_fr.detach(), word_id_emb_fr.detach()), 2)
+        output_word_fr_2 = self.match_word(combine)
+        output_word_fr_2 = output_word_fr_2.view(self.batch_size * seq_len_fr, -1)
+
+        unlabeled_loss_function = nn.KLDivLoss(size_average=False)
+        output_word_en_2 = F.softmax(output_word_en_2, dim=1).detach()
+        output_word_fr_2 = F.log_softmax(output_word_fr_2, dim=1)
+        loss_2 = unlabeled_loss_function(output_word_fr_2, output_word_en_2) / seq_len_fr
+        return loss, loss_2
 
 
     def forward(self, batch_input, lang='En', unlabeled=False):

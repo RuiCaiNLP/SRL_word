@@ -552,14 +552,14 @@ if __name__ == '__main__':
                     unlabeled_data_fr = unlabeled_Generator_Fr.next()
 
 
-                u_loss = srl_model((unlabeled_data_en, unlabeled_data_fr), lang='En', unlabeled='True')
+                u_loss, u_loss_2 = srl_model((unlabeled_data_en, unlabeled_data_fr), lang='En', unlabeled='True')
                 optimizer.zero_grad()
-                u_loss.backward()
+                (u_loss+ u_loss_2).backward()
                 optimizer.step()
                 batch_size = 30
 
                 if batch_i % 50 == 0:
-                    log(batch_i, u_loss)
+                    log(batch_i, u_loss, u_loss_2)
 
                 if batch_i > 0 and batch_i % show_steps == 0:
 
