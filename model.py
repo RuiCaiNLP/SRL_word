@@ -208,7 +208,7 @@ class SR_Labeler(nn.Module):
         pred_recur_2 = pred_recur.unsqueeze(1).expand(self.batch_size, seq_len_fr, self.bilstm_hidden_size * 2)
         pred_recur_en = pred_recur_1
         pred_recur_en_2 = pred_recur_2
-        combine = torch.cat((pred_recur, input_emb, word_id_emb), 2)
+        combine = torch.cat((pred_recur_en, input_emb, word_id_emb), 2)
         output_word = self.match_word(combine)
         output_word_en = output_word.view(self.batch_size*seq_len, -1).detach()
 
@@ -249,7 +249,7 @@ class SR_Labeler(nn.Module):
 
         #############################################3
 
-        combine = torch.cat((pred_recur_en_2 , input_emb_fr, word_id_emb_fr), 2)
+        combine = torch.cat((pred_recur_en_2 , input_emb_fr.detach(), word_id_emb_fr.detach()), 2)
         output_word = self.match_word(combine)
         output_word_en_2 = output_word.view(self.batch_size * seq_len_fr, -1)
 
