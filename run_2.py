@@ -503,24 +503,96 @@ if __name__ == '__main__':
         dev_best_score = None
         test_best_score = None
         test_ood_best_score = None
+        unlabeled_Generator_En = inter_utils.get_batch(unlabeled_dataset_en, 1, word2idx, fr_word2idx,
+                                                       lemma2idx, pos2idx, pretrain2idx, fr_pretrain2idx,
+                                                       deprel2idx, argument2idx, idx2word, shuffle=False,
+                                                       lang="En")
+        unlabeled_Generator_Fr = inter_utils.get_batch(unlabeled_dataset_fr, 1, word2idx, fr_word2idx,
+                                                       lemma2idx, pos2idx, pretrain2idx, fr_pretrain2idx,
+                                                       deprel2idx, argument2idx, idx2word, shuffle=False,
+                                                       lang="Fr")
 
         for epoch in range(30):
 
-            epoch_start = time.time()
+            for batch_i, train_input_data in enumerate(
+                    inter_utils.get_batch(train_dataset, batch_size, word2idx, fr_word2idx,
+                                          lemma2idx, pos2idx, pretrain2idx, fr_pretrain2idx,
+                                          deprel2idx, argument2idx, idx2word, shuffle=False,
+                                          lang='En')):
 
-            #dev_best_score = train_1_epoc(srl_model, criterion, optimizer, train_dataset, labeled_dataset_fr, batch_size,
-            #     word2idx, fr_word2idx, lemma2idx, pos2idx, pretrain2idx, fr_pretrain2idx,
-            #     deprel2idx, argument2idx, idx2word, shuffle=False, lang='En',
-            #     dev_best_score = None, test_best_score = None, test_ood_best_score = None)
+                flat_argument = train_input_data['flat_argument']
+                target_batch_variable = get_torch_variable_from_np(flat_argument)
+
+                out, out_word = srl_model(train_input_data, lang='En')
+                loss = criterion(out, target_batch_variable)
+                loss_word = criterion(out_word, target_batch_variable)
+                if batch_i % 50 == 0:
+                    log(batch_i, loss, loss_word)
+
+                optimizer.zero_grad()
+                (loss + loss_word).backward()
+                optimizer.step()
+
+                batch_size=1
+                try:
+                    unlabeled_data_en = unlabeled_Generator_En.next()
+                    unlabeled_data_fr = unlabeled_Generator_Fr.next()
+                except StopIteration:
+                    unlabeled_Generator_En = inter_utils.get_batch(unlabeled_dataset_en, batch_size, word2idx,
+                                                                   fr_word2idx,
+                                                                   lemma2idx, pos2idx, pretrain2idx, fr_pretrain2idx,
+                                                                   deprel2idx, argument2idx, idx2word, shuffle=False,
+                                                                   lang="En")
+                    unlabeled_Generator_Fr = inter_utils.get_batch(unlabeled_dataset_fr, batch_size, word2idx,
+                                                                   fr_word2idx,
+                                                                   lemma2idx, pos2idx, pretrain2idx, fr_pretrain2idx,
+                                                                   deprel2idx, argument2idx, idx2word, shuffle=False,
+                                                                   lang="Fr")
+                    unlabeled_data_en = unlabeled_Generator_En.next()
+                    unlabeled_data_fr = unlabeled_Generator_Fr.next()
 
 
-            batch_size=1
-            dev_best_score = parallel_train_1_epoc(srl_model, criterion, optimizer, (unlabeled_dataset_en, unlabeled_dataset_fr),
-                                                   labeled_dataset_fr, batch_size,
-                 word2idx, fr_word2idx, lemma2idx, pos2idx, pretrain2idx, fr_pretrain2idx,
-                 deprel2idx, argument2idx, idx2word, shuffle=False, lang='En',
-                 dev_best_score = None, test_best_score = None, test_ood_best_score = None)
-            batch_size=30
+                u_loss = srl_model((unlabeled_data_en, unlabeled_data_fr), lang='En', unlabeled='True')
+                optimizer.zero_grad()
+                u_loss.backward()
+                optimizer.step()
+                batch_size = 30
+
+                if batch_i % 50 == 0:
+                    log(batch_i, u_loss)
+
+                if batch_i > 0 and batch_i % show_steps == 0:
+
+                    _, pred = torch.max(out, 1)
+
+                    pred = get_data(pred)
+
+                    # pred = pred.reshape([bs, sl])
+
+                    log('\n')
+                    log('*' * 80)
+
+                    eval_train_batch(epoch, batch_i, loss.data[0], flat_argument, pred, argument2idx)
+
+                    log('FR test:')
+                    score, dev_output = eval_data(srl_model, elmo, labeled_dataset_fr, batch_size, word2idx,
+                                                  fr_word2idx,
+                                                  lemma2idx,
+                                                  pos2idx, pretrain2idx, fr_pretrain2idx, deprel2idx, argument2idx,
+                                                  idx2argument, idx2word,
+                                                  False,
+                                                  dev_predicate_correct, dev_predicate_sum, lang='Fr')
+
+                    if dev_best_score is None or score[5] > dev_best_score[5]:
+                        dev_best_score = score
+                        output_predict(
+                            os.path.join(result_path, 'dev_argument_{:.2f}.pred'.format(dev_best_score[2] * 100)),
+                            dev_output)
+                        # torch.save(srl_model, os.path.join(os.path.dirname(__file__),'model/best_{:.2f}.pkl'.format(dev_best_score[2]*100)))
+                    log('\tdev best P:{:.2f} R:{:.2f} F1:{:.2f} NP:{:.2f} NR:{:.2f} NF1:{:.2f}'.format(
+                        dev_best_score[0] * 100, dev_best_score[1] * 100,
+                        dev_best_score[2] * 100, dev_best_score[3] * 100,
+                        dev_best_score[4] * 100, dev_best_score[5] * 100))
 
     else:
 

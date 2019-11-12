@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-python run.py  --train --train_data data/En_train.dataset --valid_data data/En_dev.dataset  \
+python run_2.py  --train --train_data data/En_train.dataset --valid_data data/En_dev.dataset  \
   --train_data_fr data/Fr_train.dataset --valid_data_fr data/Fr_dev.dataset  \
   --unlabeled_data_en data/Unlabeled_En.dataset --unlabeled_data_fr data/Unlabeled_Fr.dataset \
   --seed 100 --tmp_path temp --model_path model --result_path result --pretrain_embedding data/en.vec.txt\
