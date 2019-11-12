@@ -237,8 +237,8 @@ class SR_Labeler(nn.Module):
         pred_recur_fr = pred_recur_fr.view(self.batch_size, self.bilstm_hidden_size * 2)
 
         #############################################3
-        pred_recur_fr = pred_recur_fr.unsqueeze(1).expand(self.batch_size, seq_len_en, self.bilstm_hidden_size * 2)
-        combine = torch.cat((pred_recur_fr, input_emb_en.detach(), word_id_emb_en.detach()), 2)
+        pred_recur_fr_1 = pred_recur_fr.unsqueeze(1).expand(self.batch_size, seq_len_en, self.bilstm_hidden_size * 2)
+        combine = torch.cat((pred_recur_fr_1, input_emb_en.detach(), word_id_emb_en.detach()), 2)
         output_word_fr = self.match_word(combine)
         output_word_fr = output_word_fr.view(self.batch_size*seq_len_en, -1)
 
@@ -253,8 +253,8 @@ class SR_Labeler(nn.Module):
         output_word = self.match_word(combine)
         output_word_en_2 = output_word.view(self.batch_size * seq_len_fr, -1)
 
-        pred_recur_fr = pred_recur_fr.unsqueeze(1).expand(self.batch_size, seq_len_fr, self.bilstm_hidden_size * 2)
-        combine = torch.cat((pred_recur_fr, input_emb_fr.detach(), word_id_emb_fr.detach()), 2)
+        pred_recur_fr_2 = pred_recur_fr.unsqueeze(1).expand(self.batch_size, seq_len_fr, self.bilstm_hidden_size * 2)
+        combine = torch.cat((pred_recur_fr_2, input_emb_fr.detach(), word_id_emb_fr.detach()), 2)
         output_word_fr_2 = self.match_word(combine)
         output_word_fr_2 = output_word_fr_2.view(self.batch_size * seq_len_fr, -1)
 
