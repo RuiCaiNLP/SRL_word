@@ -234,7 +234,7 @@ def parallel_train_1_epoc(srl_model, criterion, optimizer, train_dataset, labele
         #log(predicates_1D, predicates_1D_fr)
         u_loss = srl_model((unlabeled_data_en, unlabeled_data_fr), lang='En', unlabeled='True')
         optimizer.zero_grad()
-        #u_loss.backward()
+        u_loss.backward()
         optimizer.step()
 
         if batch_i % 50 == 0:
