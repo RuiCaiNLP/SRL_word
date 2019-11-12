@@ -196,7 +196,7 @@ class SR_Labeler(nn.Module):
         pred_recur_en = pred_recur
         combine = torch.cat((pred_recur, input_emb, word_id_emb), 2)
         output_word = self.match_word(combine)
-        output_word_en = output_word.view(self.batch_size , seq_len, -1).detach()
+        output_word_en = output_word.view(self.batch_size*seq_len, -1).detach()
 
 
         pretrain_batch_fr = get_torch_variable_from_np(unlabeled_data_fr['pretrain'])
@@ -233,11 +233,11 @@ class SR_Labeler(nn.Module):
         pred_recur_fr = pred_recur_fr.unsqueeze(1).expand(self.batch_size, seq_len_en, self.bilstm_hidden_size * 2)
         combine = torch.cat((pred_recur_fr, input_emb_en.detach(), word_id_emb_en.detach()), 2)
         output_word_fr = self.match_word(combine)
-        output_word_fr = output_word_fr.view(self.batch_size, seq_len_en, -1)
+        output_word_fr = output_word_fr.view(self.batch_size*seq_len_en, -1)
         unlabeled_loss_function = nn.KLDivLoss(size_average=False)
-        output_word_en = F.softmax(output_word_en, dim=2).detach()
-        output_word_fr = F.log_softmax(output_word_fr, dim=2)
-        loss = unlabeled_loss_function(output_word_fr, output_word_en)
+        output_word_en = F.softmax(output_word_en, dim=1).detach()
+        output_word_fr = F.log_softmax(output_word_fr, dim=1)
+        loss = unlabeled_loss_function(output_word_fr, output_word_en)/seq_len_en
         #log(loss)
         return loss
 
