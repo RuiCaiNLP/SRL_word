@@ -236,7 +236,7 @@ class SR_Labeler(nn.Module):
         output_word_fr = output_word_fr.view(self.batch_size, seq_len_en, -1)
         unlabeled_loss_function = nn.KLDivLoss()
         output_word_en = F.softmax(output_word_en, dim=2).detach()
-        output_word_fr = F.log_softmax(output_word_fr.detach(), dim=2)
+        output_word_fr = F.log_softmax(output_word_fr, dim=2).detach()
         loss = unlabeled_loss_function(output_word_fr, output_word_en)
         return loss
 
