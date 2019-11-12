@@ -234,10 +234,11 @@ class SR_Labeler(nn.Module):
         combine = torch.cat((pred_recur_fr, input_emb_en.detach(), word_id_emb_en.detach()), 2)
         output_word_fr = self.match_word(combine)
         output_word_fr = output_word_fr.view(self.batch_size, seq_len_en, -1)
-        unlabeled_loss_function = nn.KLDivLoss()
+        unlabeled_loss_function = nn.KLDivLoss(size_average=False)
         output_word_en = F.softmax(output_word_en, dim=2).detach()
         output_word_fr = F.log_softmax(output_word_fr, dim=2).detach()
         loss = unlabeled_loss_function(output_word_fr, output_word_en)
+        log(loss)
         return loss
 
 
