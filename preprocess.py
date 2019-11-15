@@ -196,8 +196,7 @@ if __name__ == '__main__':
     make_dataset_input(unlabeled_file_en, os.path.join(pretrain_path, 'unlabeled_en.input'), unify_pred=False, deprel_vocab=deprel_vocab,
                        pickle_dump_path=os.path.join(pretrain_path, 'unlabeled_en.pickle.input'))
     make_dataset_input(unlabeled_file_fr, os.path.join(pretrain_path, 'unlabeled_fr.input'), unify_pred=False,
-                       deprel_vocab=deprel_vocab,
-                       pickle_dump_path=os.path.join(pretrain_path, 'unlabeled_fr.pickle.input'))
+                       deprel_vocab=deprel_vocab, pickle_dump_path=os.path.join(pretrain_path, 'unlabeled_fr.pickle.input'))
 
     log(' data preprocessing finished!')
 

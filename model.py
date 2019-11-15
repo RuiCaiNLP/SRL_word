@@ -77,7 +77,7 @@ class SR_Labeler(nn.Module):
 
         input_emb_size += self.pretrain_emb_size  # + self.pos_emb_size# + self.word_emb_size
 
-
+        self.para_batch_size = 30
         if USE_CUDA:
             self.bilstm_hidden_state = (
             Variable(torch.randn(2 * self.bilstm_num_layers, self.batch_size, self.bilstm_hidden_size),
@@ -93,15 +93,15 @@ class SR_Labeler(nn.Module):
 
         if USE_CUDA:
             self.bilstm_hidden_state_p = (
-            Variable(torch.randn(2 * self.bilstm_num_layers, 1, self.bilstm_hidden_size),
+            Variable(torch.randn(2 * self.bilstm_num_layers, self.para_batch_size, self.bilstm_hidden_size),
                      requires_grad=True).cuda(),
-            Variable(torch.randn(2 * self.bilstm_num_layers, 1, self.bilstm_hidden_size),
+            Variable(torch.randn(2 * self.bilstm_num_layers, self.para_batch_size, self.bilstm_hidden_size),
                      requires_grad=True).cuda())
         else:
             self.bilstm_hidden_state_p = (
-            Variable(torch.randn(2 * self.bilstm_num_layers, 1, self.bilstm_hidden_size),
+            Variable(torch.randn(2 * self.bilstm_num_layers, self.para_batch_size, self.bilstm_hidden_size),
                      requires_grad=True),
-            Variable(torch.randn(2 * self.bilstm_num_layers, 1, self.bilstm_hidden_size),
+            Variable(torch.randn(2 * self.bilstm_num_layers, self.para_batch_size, self.bilstm_hidden_size),
                      requires_grad=True))
 
         self.bilstm_layer = nn.LSTM(input_size=300+1*self.flag_emb_size,
@@ -134,15 +134,15 @@ class SR_Labeler(nn.Module):
 
         if USE_CUDA:
             self.bilstm_hidden_state_word_p = (
-            Variable(torch.randn(2 * 2, 1, self.bilstm_hidden_size),
+            Variable(torch.randn(2 * 2, self.para_batch_size, self.bilstm_hidden_size),
                      requires_grad=True).cuda(),
-            Variable(torch.randn(2 * 2, 1, self.bilstm_hidden_size),
+            Variable(torch.randn(2 * 2, self.para_batch_size, self.bilstm_hidden_size),
                      requires_grad=True).cuda())
         else:
             self.bilstm_hidden_state_word_p = (
-            Variable(torch.randn(2 * 2, 1, self.bilstm_hidden_size),
+            Variable(torch.randn(2 * 2, self.para_batch_size, self.bilstm_hidden_size),
                      requires_grad=True),
-            Variable(torch.randn(2 * 2, 1, self.bilstm_hidden_size),
+            Variable(torch.randn(2 * 2, self.para_batch_size, self.bilstm_hidden_size),
                      requires_grad=True))
 
         self.bilstm_layer_word = nn.LSTM(input_size=300+self.target_vocab_size+2*self.flag_emb_size,
@@ -245,7 +245,7 @@ class SR_Labeler(nn.Module):
         unlabeled_loss_function = nn.KLDivLoss(size_average=False)
         output_word_en = F.softmax(output_word_en, dim=1).detach()
         output_word_fr = F.log_softmax(output_word_fr, dim=1)
-        loss = unlabeled_loss_function(output_word_fr, output_word_en)/seq_len_en
+        loss = unlabeled_loss_function(output_word_fr, output_word_en)/(seq_len_en*self.para_batch_size)
 
         #############################################3
 
@@ -261,15 +261,15 @@ class SR_Labeler(nn.Module):
         unlabeled_loss_function = nn.KLDivLoss(size_average=False)
         output_word_en_2 = F.softmax(output_word_en_2, dim=1).detach()
         output_word_fr_2 = F.log_softmax(output_word_fr_2, dim=1)
-        loss_2 = unlabeled_loss_function(output_word_fr_2, output_word_en_2) / seq_len_fr
+        loss_2 = unlabeled_loss_function(output_word_fr_2, output_word_en_2) / (seq_len_fr*self.para_batch_size)
         return loss, loss_2
 
 
     def forward(self, batch_input, lang='En', unlabeled=False):
         if unlabeled:
-            self.batch_size=1
+            #self.batch_size=1
             loss = self.parallel_train(batch_input)
-            self.batch_size = 30
+            #self.batch_size = 30
             return loss
         word_batch = get_torch_variable_from_np(batch_input['word'])
         pretrain_batch = get_torch_variable_from_np(batch_input['pretrain'])

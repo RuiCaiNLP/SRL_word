@@ -503,11 +503,11 @@ if __name__ == '__main__':
         dev_best_score = None
         test_best_score = None
         test_ood_best_score = None
-        unlabeled_Generator_En = inter_utils.get_batch(unlabeled_dataset_en, 1, word2idx, fr_word2idx,
+        unlabeled_Generator_En = inter_utils.get_batch(unlabeled_dataset_en, batch_size, word2idx, fr_word2idx,
                                                        lemma2idx, pos2idx, pretrain2idx, fr_pretrain2idx,
                                                        deprel2idx, argument2idx, idx2word, shuffle=False,
                                                        lang="En")
-        unlabeled_Generator_Fr = inter_utils.get_batch(unlabeled_dataset_fr, 1, word2idx, fr_word2idx,
+        unlabeled_Generator_Fr = inter_utils.get_batch(unlabeled_dataset_fr, batch_size, word2idx, fr_word2idx,
                                                        lemma2idx, pos2idx, pretrain2idx, fr_pretrain2idx,
                                                        deprel2idx, argument2idx, idx2word, shuffle=False,
                                                        lang="Fr")
@@ -533,7 +533,7 @@ if __name__ == '__main__':
                 (loss + loss_word).backward()
                 optimizer.step()
 
-                batch_size=1
+                #batch_size=1
                 try:
                     unlabeled_data_en = unlabeled_Generator_En.next()
                     unlabeled_data_fr = unlabeled_Generator_Fr.next()
@@ -556,7 +556,7 @@ if __name__ == '__main__':
                 optimizer.zero_grad()
                 (u_loss+ u_loss_2).backward()
                 optimizer.step()
-                batch_size = 30
+                #batch_size = 30
 
                 if batch_i % 50 == 0:
                     log(batch_i, u_loss, u_loss_2)
