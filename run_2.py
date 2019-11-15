@@ -582,6 +582,14 @@ if __name__ == '__main__':
                                                   idx2argument, idx2word,
                                                   False,
                                                   dev_predicate_correct, dev_predicate_sum, lang='Fr')
+                    log('En test:')
+                    eval_data(srl_model, elmo, dev_dataset, batch_size, word2idx,
+                              fr_word2idx,
+                              lemma2idx,
+                              pos2idx, pretrain2idx, fr_pretrain2idx, deprel2idx, argument2idx,
+                              idx2argument, idx2word,
+                              False,
+                              dev_predicate_correct, dev_predicate_sum, lang='En')
 
                     if dev_best_score is None or score[5] > dev_best_score[5]:
                         dev_best_score = score
