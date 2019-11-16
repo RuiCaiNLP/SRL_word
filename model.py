@@ -323,12 +323,13 @@ class SR_Labeler(nn.Module):
         combine = torch.cat((pred_recur_en, input_emb, word_id_emb), 2)
         output_word = self.match_word(combine)
         output_word_en = output_word.view(self.batch_size, seq_len, -1)
-        #output_word_en = F.softmax(output_word_en, 2).detach()
+        output_word_en = F.softmax(output_word_en, 2).detach()
         max_role_en = torch.max(output_word_en, 1)[0]
 
         combine_fr = torch.cat((pred_recur_en_2.detach(), input_emb_fr, word_id_emb_fr.detach()), 2)
         output_word_fr = self.match_word(combine_fr)
         output_word_fr = output_word_fr.view(self.batch_size, seq_len_fr, -1)
+        output_word_fr = F.softmax(output_word_fr, 2)
         max_role_fr = torch.max(output_word_fr, 1)[0]
         loss = nn.MSELoss()
         word_loss = loss(max_role_fr, max_role_en)
