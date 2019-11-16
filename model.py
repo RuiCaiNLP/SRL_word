@@ -168,8 +168,9 @@ class SR_Labeler(nn.Module):
         word_id_emb_fr = self.id_embedding(word_id_fr).detach()
         flag_emb_fr = self.flag_embedding(flag_batch_fr).detach()
         pretrain_emb_fr = self.fr_pretrained_embedding(pretrain_batch_fr).detach()
-        pretrain_emb_fr = self.word_matrix(pretrain_emb_fr)
+        pretrain_emb_fr_matrixed = self.word_matrix(pretrain_emb_fr)
         input_emb_fr = torch.cat((pretrain_emb_fr, flag_emb_fr), 2)
+        input_emb_fr_matrixed = torch.cat((pretrain_emb_fr_matrixed, flag_emb_fr), 2)
         seq_len_fr = input_emb_fr.shape[1]
 
 
@@ -220,7 +221,7 @@ class SR_Labeler(nn.Module):
 
 
 
-        bilstm_output_fr, (_, bilstm_final_state) = self.bilstm_layer(input_emb_fr, self.bilstm_hidden_state_p)
+        bilstm_output_fr, (_, bilstm_final_state) = self.bilstm_layer(input_emb_fr_matrixed, self.bilstm_hidden_state_p)
         bilstm_output_fr = bilstm_output_fr.contiguous()
         hidden_input_fr = bilstm_output_fr.view(bilstm_output_fr.shape[0] * bilstm_output_fr.shape[1], -1)
         hidden_input_fr = hidden_input_fr.view(self.batch_size, seq_len_fr, -1)
