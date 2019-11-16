@@ -232,7 +232,7 @@ class SR_Labeler(nn.Module):
         SRL_output_fr = SRL_output_fr.view(self.batch_size * seq_len_fr, -1)
 
         SRL_input_fr = SRL_output_fr.view(self.batch_size, seq_len_fr, -1)
-        compress_input_fr = torch.cat((input_emb_fr.detach(), word_id_emb_fr, SRL_input_fr), 2)
+        compress_input_fr = torch.cat((input_emb_fr, word_id_emb_fr, SRL_input_fr), 2)
         bilstm_output_word_fr, (_, bilstm_final_state_word) = self.bilstm_layer_word(compress_input_fr,
                                                                                   self.bilstm_hidden_state_word_p)
         bilstm_output_word_fr = bilstm_output_word_fr.contiguous()
