@@ -167,7 +167,7 @@ class SR_Labeler(nn.Module):
         word_id_fr = get_torch_variable_from_np(unlabeled_data_fr['word_times'])
         word_id_emb_fr = self.id_embedding(word_id_fr).detach()
         flag_emb_fr = self.flag_embedding(flag_batch_fr).detach()
-        pretrain_emb_fr = self.fr_pretrained_embedding(pretrain_batch_fr).detach()
+        pretrain_emb_fr = self.fr_pretrained_embedding(pretrain_batch_fr)
         #pretrain_emb_fr = self.word_matrix(pretrain_emb_fr).detach()
         input_emb_fr = torch.cat((pretrain_emb_fr, flag_emb_fr), 2)
         seq_len_fr = input_emb_fr.shape[1]
@@ -280,7 +280,7 @@ class SR_Labeler(nn.Module):
         word_id_emb_fr = self.id_embedding(word_id_fr).detach()
         flag_emb_fr = self.flag_embedding(flag_batch_fr).detach()
         pretrain_emb_fr = self.fr_pretrained_embedding(pretrain_batch_fr)
-        #pretrain_emb_fr = self.word_matrix(pretrain_emb_fr)
+        pretrain_emb_fr = self.word_matrix(pretrain_emb_fr)
         input_emb_fr = torch.cat((pretrain_emb_fr, flag_emb_fr), 2)
         seq_len_fr = input_emb_fr.shape[1]
 
@@ -360,7 +360,7 @@ class SR_Labeler(nn.Module):
             pretrain_emb = self.pretrained_embedding(pretrain_batch).detach()
         else:
             pretrain_emb = self.fr_pretrained_embedding(pretrain_batch).detach()
-            #pretrain_emb = self.word_matrix(pretrain_emb).detach()
+            pretrain_emb = self.word_matrix(pretrain_emb).detach()
 
         """
         if lang == "En":
