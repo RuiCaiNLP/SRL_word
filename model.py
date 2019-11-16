@@ -168,7 +168,7 @@ class SR_Labeler(nn.Module):
         word_id_emb_fr = self.id_embedding(word_id_fr).detach()
         flag_emb_fr = self.flag_embedding(flag_batch_fr).detach()
         pretrain_emb_fr = self.fr_pretrained_embedding(pretrain_batch_fr).detach()
-        pretrain_emb_fr = self.word_matrix(pretrain_emb_fr).detach()
+        pretrain_emb_fr = self.word_matrix(pretrain_emb_fr)
         input_emb_fr = torch.cat((pretrain_emb_fr, flag_emb_fr), 2)
         seq_len_fr = input_emb_fr.shape[1]
 
