@@ -221,7 +221,7 @@ class SR_Labeler(nn.Module):
 
 
 
-        bilstm_output_fr, (_, bilstm_final_state) = self.bilstm_layer(input_emb_fr_matrixed, self.bilstm_hidden_state_p)
+        bilstm_output_fr, (_, bilstm_final_state) = self.bilstm_layer(input_emb_fr, self.bilstm_hidden_state_p)
         bilstm_output_fr = bilstm_output_fr.contiguous()
         hidden_input_fr = bilstm_output_fr.view(bilstm_output_fr.shape[0] * bilstm_output_fr.shape[1], -1)
         hidden_input_fr = hidden_input_fr.view(self.batch_size, seq_len_fr, -1)
@@ -362,7 +362,7 @@ class SR_Labeler(nn.Module):
             pretrain_emb = self.pretrained_embedding(pretrain_batch).detach()
         else:
             pretrain_emb = self.fr_pretrained_embedding(pretrain_batch).detach()
-            pretrain_emb = self.word_matrix(pretrain_emb).detach()
+            #pretrain_emb = self.word_matrix(pretrain_emb).detach()
 
         """
         if lang == "En":
