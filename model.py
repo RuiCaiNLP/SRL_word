@@ -346,7 +346,8 @@ class SR_Labeler(nn.Module):
         if unlabeled:
             #self.batch_size=1
             loss = self.parallel_train(batch_input)
-            loss_word = self.word_train(batch_input)
+            #loss_word = self.word_train(batch_input)
+            loss_word = 0
             #self.batch_size = 30
             return loss, loss_word
         word_batch = get_torch_variable_from_np(batch_input['word'])
