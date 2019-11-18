@@ -167,6 +167,7 @@ class SR_Labeler(nn.Module):
         word_id_fr = get_torch_variable_from_np(unlabeled_data_fr['word_times'])
         word_id_emb_fr = self.id_embedding(word_id_fr).detach()
         flag_emb_fr = self.flag_embedding(flag_batch_fr).detach()
+
         pretrain_emb_fr = self.fr_pretrained_embedding(pretrain_batch_fr).detach()
         pretrain_emb_fr_matrixed = self.word_matrix(pretrain_emb_fr)
         input_emb_fr = torch.cat((pretrain_emb_fr, flag_emb_fr), 2)
@@ -221,7 +222,7 @@ class SR_Labeler(nn.Module):
 
 
 
-        bilstm_output_fr, (_, bilstm_final_state) = self.bilstm_layer(input_emb_fr, self.bilstm_hidden_state_p)
+        bilstm_output_fr, (_, bilstm_final_state) = self.bilstm_layer(input_emb_fr_matrixed, self.bilstm_hidden_state_p)
         bilstm_output_fr = bilstm_output_fr.contiguous()
         hidden_input_fr = bilstm_output_fr.view(bilstm_output_fr.shape[0] * bilstm_output_fr.shape[1], -1)
         hidden_input_fr = hidden_input_fr.view(self.batch_size, seq_len_fr, -1)
@@ -237,7 +238,6 @@ class SR_Labeler(nn.Module):
         bilstm_output_word_fr, (_, bilstm_final_state_word) = self.bilstm_layer_word(compress_input_fr,
                                                                                   self.bilstm_hidden_state_word_p)
         bilstm_output_word_fr = bilstm_output_word_fr.contiguous()
-        # hidden_input_word = bilstm_output_word.view(bilstm_output_word.shape[0] * bilstm_output_word.shape[1], -1)
         pred_recur_fr = bilstm_output_word_fr[np.arange(0, self.batch_size), predicates_1D_fr]
         pred_recur_fr = pred_recur_fr.view(self.batch_size, self.bilstm_hidden_size * 2)
 
@@ -362,7 +362,7 @@ class SR_Labeler(nn.Module):
             pretrain_emb = self.pretrained_embedding(pretrain_batch).detach()
         else:
             pretrain_emb = self.fr_pretrained_embedding(pretrain_batch).detach()
-            #pretrain_emb = self.word_matrix(pretrain_emb).detach()
+            pretrain_emb = self.word_matrix(pretrain_emb).detach()
 
         """
         if lang == "En":
