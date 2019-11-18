@@ -234,7 +234,7 @@ class SR_Labeler(nn.Module):
         SRL_output_fr = SRL_output_fr.view(self.batch_size * seq_len_fr, -1)
 
         SRL_input_fr = SRL_output_fr.view(self.batch_size, seq_len_fr, -1)
-        compress_input_fr = torch.cat((input_emb_fr.detach(), word_id_emb_fr, SRL_input_fr), 2)
+        compress_input_fr = torch.cat((input_emb_fr_matrixed.detach(), word_id_emb_fr, SRL_input_fr), 2)
         bilstm_output_word_fr, (_, bilstm_final_state_word) = self.bilstm_layer_word(compress_input_fr,
                                                                                   self.bilstm_hidden_state_word_p)
         bilstm_output_word_fr = bilstm_output_word_fr.contiguous()
@@ -254,12 +254,12 @@ class SR_Labeler(nn.Module):
 
         #############################################3
 
-        combine = torch.cat((pred_recur_en_2 , input_emb_fr.detach(), word_id_emb_fr.detach()), 2)
+        combine = torch.cat((pred_recur_en_2 , input_emb_fr_matrixed.detach(), word_id_emb_fr.detach()), 2)
         output_word = self.match_word(combine)
         output_word_en_2 = output_word.view(self.batch_size * seq_len_fr, -1)
 
         pred_recur_fr_2 = pred_recur_fr.unsqueeze(1).expand(self.batch_size, seq_len_fr, self.bilstm_hidden_size * 2)
-        combine = torch.cat((pred_recur_fr_2, input_emb_fr.detach(), word_id_emb_fr.detach()), 2)
+        combine = torch.cat((pred_recur_fr_2, input_emb_fr_matrixed.detach(), word_id_emb_fr.detach()), 2)
         output_word_fr_2 = self.match_word(combine)
         output_word_fr_2 = output_word_fr_2.view(self.batch_size * seq_len_fr, -1)
 
@@ -366,7 +366,7 @@ class SR_Labeler(nn.Module):
             pretrain_emb = self.fr_pretrained_embedding(pretrain_batch).detach()
             pretrain_emb_matrixed = self.word_matrix(pretrain_emb).detach()
             input_emb = torch.cat((pretrain_emb_matrixed, flag_emb), 2)
-            input_emb_word = torch.cat((pretrain_emb, flag_emb), 2)
+            input_emb_word = torch.cat((pretrain_emb_matrixed, flag_emb), 2)
 
         """
         if lang == "En":
