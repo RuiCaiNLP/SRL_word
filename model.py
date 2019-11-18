@@ -360,9 +360,13 @@ class SR_Labeler(nn.Module):
 
         if lang == "En":
             pretrain_emb = self.pretrained_embedding(pretrain_batch).detach()
+            input_emb = torch.cat((pretrain_emb, flag_emb), 2)
+            input_emb_word = input_emb
         else:
             pretrain_emb = self.fr_pretrained_embedding(pretrain_batch).detach()
-            pretrain_emb = self.word_matrix(pretrain_emb).detach()
+            pretrain_emb_matrixed = self.word_matrix(pretrain_emb).detach()
+            input_emb = torch.cat((pretrain_emb_matrixed, flag_emb), 2)
+            input_emb_word = torch.cat((pretrain_emb, flag_emb), 2)
 
         """
         if lang == "En":
@@ -373,7 +377,7 @@ class SR_Labeler(nn.Module):
 
 
         #input_emb = torch.cat((pretrain_emb, word_emb), 2)
-        input_emb = torch.cat((pretrain_emb, flag_emb), 2)
+
         input_emb = self.word_dropout(input_emb)
         seq_len = input_emb.shape[1]
         bilstm_output, (_, bilstm_final_state) = self.bilstm_layer(input_emb, self.bilstm_hidden_state)
@@ -389,14 +393,14 @@ class SR_Labeler(nn.Module):
         SRL_output = SRL_output.view(self.batch_size * seq_len, -1)
 
         SRL_input = SRL_output.view(self.batch_size, seq_len, -1)
-        compress_input = torch.cat((input_emb, word_id_emb, SRL_input), 2)
+        compress_input = torch.cat((input_emb_word, word_id_emb, SRL_input), 2)
         bilstm_output_word, (_, bilstm_final_state_word) = self.bilstm_layer_word(compress_input, self.bilstm_hidden_state_word)
         bilstm_output_word = bilstm_output_word.contiguous()
         #hidden_input_word = bilstm_output_word.view(bilstm_output_word.shape[0] * bilstm_output_word.shape[1], -1)
         pred_recur = bilstm_output_word[np.arange(0, self.batch_size), predicates_1D]
         pred_recur = pred_recur.view(self.batch_size, self.bilstm_hidden_size*2)
         pred_recur = pred_recur.unsqueeze(1).expand(self.batch_size, seq_len, self.bilstm_hidden_size*2)
-        combine = torch.cat((pred_recur, input_emb.detach(), word_id_emb.detach()), 2)
+        combine = torch.cat((pred_recur, input_emb_word.detach(), word_id_emb.detach()), 2)
         output_word = self.match_word(combine)
         output_word = output_word.view(self.batch_size * seq_len, -1)
         return SRL_output, output_word
